@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# World ID Anonymous Vote (Mini App Demo)
 
-## Getting Started
+World App 내부에서 실행되는 Mini App 데모입니다. World ID `verify`로 익명 인증을 받고, 서버 메모리에서 nullifier를 저장해 **중복 투표를 방지**합니다.
 
-First, run the development server:
+## Features
+- MiniKit 초기화 및 World App 내 인증
+- 2개 안건 투표 UI
+- 백엔드에서 `nullifier_hash` 기반 중복 방지
+- Tunnelmole로 모바일 실기기 테스트
 
+## Prerequisites
+- Node.js 18+ (권장: 20+)
+- World App 최신 버전
+- Worldcoin Developer Portal에 Action 등록
+
+## Setup
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment
+`.env.local` 파일에 App ID가 있어야 합니다.
+```
+WORLDCOIN_APP_ID=app_...
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run (Local)
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Expose with Tunnelmole (Mobile Test)
+```bash
+npm run share
+```
+- 출력된 Public URL을 **World App 내부 브라우저**에서 열어 테스트합니다.
 
-## Learn More
+## Action 등록 (Developer Portal)
+1. Developer Portal → App 선택
+2. `Incognito Actions`(또는 `Actions`) → `Create Action`
+3. **Action Name**: 코드의 `action` 값과 동일 (예: `anonymous-vote`)
+4. **Description**: `익명 인기투표에 1인 1표를 행사합니다.`
+5. **Max Verifications**: `1`
 
-To learn more about Next.js, take a look at the following resources:
+## Duplicate Vote Prevention
+서버는 다음 키로 중복 투표를 막습니다.
+```
+action + signal + nullifier_hash
+```
+즉, **안건별로 1번씩** 투표 가능합니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API
+`POST /api/vote`
+```json
+{
+  "action": "anonymous-vote",
+  "signal": "점심시간 2시간 확대",
+  "proof": {
+    "status": "success",
+    "nullifier_hash": "...",
+    "proof": "...",
+    "merkle_root": "...",
+    "verification_level": "device",
+    "version": 1
+  }
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+- 이 데모는 **서버 메모리**에만 저장하므로 서버 재시작 시 중복 방지 정보가 초기화됩니다.
+- 프로덕션에서는 **proof 검증**과 **DB 저장**이 필요합니다.
